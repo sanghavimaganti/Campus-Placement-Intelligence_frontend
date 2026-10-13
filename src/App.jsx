@@ -6,9 +6,12 @@ import EligibilityScreener from './components/EligibilityScreener';
 import CompanyDrives from './components/CompanyDrives';
 import StudentDirectory from './components/StudentDirectory';
 import SkillGapSimulator from './components/SkillGapSimulator';
+import StudentPortal from './components/StudentPortal';
 import StudentDetailModal from './components/StudentDetailModal';
 import BulkUploadModal from './components/BulkUploadModal';
 import AddCompanyModal from './components/AddCompanyModal';
+import LoginModal from './components/LoginModal';
+import DriveApplicantsModal from './components/DriveApplicantsModal';
 
 import { 
   getAnalyticsSummary, 
@@ -24,11 +27,29 @@ import {
   Sparkles, 
   DollarSign, 
   GraduationCap, 
-  ArrowRight 
+  ArrowRight,
+  ShieldCheck,
+  RotateCcw
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('analytics');
+  // Default session: Admin (TPO) with quick switcher to Student
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('campus_placement_user');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+    }
+    return {
+      id: 1,
+      email: 'admin@campus.edu',
+      name: 'Prof. Rajesh Varma',
+      role: 'admin',
+      department: 'Placement Cell',
+      token: 'demo-tpo-auth-token-2026'
+    };
+  });
+
+  const [activeTab, setActiveTab] = useState(currentUser?.role === 'student' ? 'student-portal' : 'analytics');
   const [analytics, setAnalytics] = useState(null);
   const [students, setStudents] = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -36,19 +57,20 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   // Modals state
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [applicantsCompanyId, setApplicantsCompanyId] = useState(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
   const [preselectedCompanyId, setPreselectedCompanyId] = useState('');
 
   const loadData = async () => {
     try {
-      // Check health
       const healthRes = await api.get('/../health').catch(() => null);
       if (healthRes && healthRes.data?.status === 'healthy') {
         setBackendStatus('online');
       } else {
-        setBackendStatus('online'); // default assumed if local or relative
+        setBackendStatus('online');
       }
 
       const [summaryData, studentsData, companiesData] = await Promise.all([
@@ -73,23 +95,119 @@ export default function App() {
     loadData();
   }, []);
 
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    localStorage.setItem('campus_placement_user', JSON.stringify(user));
+    if (user.role === 'student') {
+      setActiveTab('student-portal');
+    } else {
+      setActiveTab('analytics');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoginOpen(true);
+  };
+
+  const handleSwitchToStudent = () => {
+    const studentUser = {
+      id: 1,
+      email: 'aarav.sharma.cse@campus.edu',
+      name: 'Aarav Sharma',
+      role: 'student',
+      student_id: 1,
+      roll_number: '21CS001',
+      department: 'CSE',
+      token: 'demo-student-token-21CS001'
+    };
+    handleLoginSuccess(studentUser);
+  };
+
+  const handleSwitchToAdmin = () => {
+    const adminUser = {
+      id: 1,
+      email: 'admin@campus.edu',
+      name: 'Prof. Rajesh Varma',
+      role: 'admin',
+      department: 'Placement Cell',
+      token: 'demo-tpo-auth-token-2026'
+    };
+    handleLoginSuccess(adminUser);
+  };
+
   const handleScreenCompany = (companyId) => {
     setPreselectedCompanyId(companyId);
     setActiveTab('screener');
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col relative overflow-hidden">
+      {/* Background Ambient Glow & Grid Decoration */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-[120px] animate-glow"></div>
+        <div className="absolute top-[30%] right-[-10%] w-[600px] h-[600px] rounded-full bg-violet-600/15 blur-[140px] animate-glow" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-emerald-600/10 blur-[130px] animate-glow" style={{ animationDelay: '5s' }}></div>
+        <div className="absolute inset-0 bg-grid-pattern opacity-40"></div>
+      </div>
+
+      {/* Quick Role Switcher Banner */}
+      <div className="relative z-50 bg-slate-900/90 border-b border-slate-800 text-[11px] py-1.5 px-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+            <span className="text-slate-400">Current Role Mode:</span>
+            <span className={`font-bold px-2 py-0.5 rounded-full ${
+              currentUser?.role === 'admin' 
+                ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' 
+                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+            }`}>
+              {currentUser?.role === 'admin' ? '👑 Training & Placement Officer (Admin)' : `🎓 Student Candidate: ${currentUser?.name} (${currentUser?.roll_number})`}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 hidden sm:inline">Quick Test:</span>
+            {currentUser?.role === 'admin' ? (
+              <button
+                onClick={handleSwitchToStudent}
+                className="px-2.5 py-1 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/50 text-emerald-300 border border-emerald-500/30 font-semibold transition-all flex items-center gap-1"
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Switch to Student View</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleSwitchToAdmin}
+                className="px-2.5 py-1 rounded-lg bg-violet-950/50 hover:bg-violet-900/50 text-violet-300 border border-violet-500/30 font-semibold transition-all flex items-center gap-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Switch to TPO Admin View</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => setIsLoginOpen(true)}
+              className="text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 font-medium transition-all"
+            >
+              Sign In / Switch
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenUpload={() => setIsUploadOpen(true)}
         backendStatus={backendStatus}
+        currentUser={currentUser}
+        onOpenLogin={() => setIsLoginOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
             <div className="w-12 h-12 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
@@ -97,11 +215,20 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* TAB 1: OVERVIEW & ANALYTICS */}
+            {/* STUDENT PORTAL TAB (FOR LOGGED-IN STUDENT) */}
+            {activeTab === 'student-portal' && (
+              <StudentPortal
+                currentUser={currentUser}
+                companies={companies}
+                onNavigateToSimulator={() => setActiveTab('simulator')}
+              />
+            )}
+
+            {/* TAB 1: OVERVIEW & ANALYTICS (FOR ADMIN) */}
             {activeTab === 'analytics' && (
               <div className="space-y-8 animate-fadeIn">
                 {/* Hero Banner */}
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900/60 via-slate-900 to-slate-900 border border-indigo-500/20 p-8 shadow-2xl">
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950/60 via-slate-900/90 to-slate-900 border border-indigo-500/30 p-8 shadow-2xl backdrop-blur-xl">
                   <div className="relative z-10 max-w-2xl">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-4">
                       <Sparkles className="w-3.5 h-3.5" />
@@ -184,6 +311,8 @@ export default function App() {
                 companies={companies}
                 onScreenCompany={handleScreenCompany}
                 onOpenAddCompany={() => setIsAddCompanyOpen(true)}
+                onViewApplicants={(id) => setApplicantsCompanyId(id)}
+                currentUser={currentUser}
               />
             )}
 
@@ -207,7 +336,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-900 bg-slate-950/90 py-6 text-center text-xs text-slate-500 relative z-10 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Campus Placement Eligibility Dashboard &copy; 2026. All rights reserved.</span>
           <span className="text-slate-400">
@@ -216,7 +345,24 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Modals */}
+      {/* MODALS */}
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      {applicantsCompanyId && (
+        <DriveApplicantsModal
+          companyId={applicantsCompanyId}
+          onClose={() => setApplicantsCompanyId(null)}
+          onSelectStudent={(id) => {
+            setApplicantsCompanyId(null);
+            setSelectedStudentId(id);
+          }}
+        />
+      )}
+
       {selectedStudentId && (
         <StudentDetailModal
           studentId={selectedStudentId}

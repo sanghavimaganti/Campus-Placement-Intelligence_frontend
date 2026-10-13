@@ -96,3 +96,44 @@ export const exportEligibleExcel = async (payload, onlyEligible = true) => {
   });
   return res.data;
 };
+
+// Authentication
+export const loginUser = async (loginId, password, role) => {
+  const res = await api.post('/auth/login', {
+    login_id: loginId,
+    password: password,
+    role: role,
+  });
+  return res.data;
+};
+
+export const getDemoCredentials = async () => {
+  const res = await api.get('/auth/demo-credentials');
+  return res.data;
+};
+
+// Drive Applications
+export const applyToDrive = async (studentId, companyDriveId) => {
+  const res = await api.post('/applications/apply', {
+    student_id: studentId,
+    company_drive_id: companyDriveId,
+  });
+  return res.data;
+};
+
+export const getStudentApplications = async (studentId) => {
+  const res = await api.get(`/applications/student/${studentId}`);
+  return res.data;
+};
+
+export const getCompanyApplicants = async (companyId) => {
+  const res = await api.get(`/applications/company/${companyId}`);
+  return res.data;
+};
+
+// What-If AI Career Simulator
+export const runWhatIfSimulation = async (payload) => {
+  const res = await api.post('/eligibility/what-if-simulator', payload);
+  return res.data;
+};
+

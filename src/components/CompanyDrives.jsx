@@ -8,10 +8,11 @@ import {
   Plus, 
   ArrowRight,
   Sparkles,
-  Layers
+  Layers,
+  Users
 } from 'lucide-react';
 
-export default function CompanyDrives({ companies, onScreenCompany, onOpenAddCompany }) {
+export default function CompanyDrives({ companies, onScreenCompany, onOpenAddCompany, onViewApplicants, currentUser }) {
   const [filterTier, setFilterTier] = useState('All');
 
   const filtered = companies.filter((c) => {
@@ -153,15 +154,26 @@ export default function CompanyDrives({ companies, onScreenCompany, onOpenAddCom
               )}
             </div>
 
-            {/* Action button */}
-            <div className="mt-6 pt-4 border-t border-slate-800">
+            {/* Action buttons */}
+            <div className="mt-6 pt-4 border-t border-slate-800 flex items-center gap-2">
               <button
                 onClick={() => onScreenCompany(company.id)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white border border-slate-700 hover:border-indigo-500 text-xs font-semibold transition-all duration-200 shadow-sm"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white border border-slate-700 hover:border-indigo-500 text-xs font-semibold transition-all duration-200 shadow-sm"
               >
-                <span>Screen Eligible Candidates</span>
+                <span>Screen Pool</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
+
+              {currentUser?.role === 'admin' && (
+                <button
+                  onClick={() => onViewApplicants && onViewApplicants(company.id)}
+                  className="flex items-center justify-center gap-1 py-2.5 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-all"
+                  title="View registered student applicants"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Applicants</span>
+                </button>
+              )}
             </div>
           </div>
         ))}
