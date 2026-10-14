@@ -107,6 +107,11 @@ export const loginUser = async (loginId, password, role) => {
   return res.data;
 };
 
+export const registerStudent = async (studentData) => {
+  const res = await api.post('/auth/register', studentData);
+  return res.data;
+};
+
 export const getDemoCredentials = async () => {
   const res = await api.get('/auth/demo-credentials');
   return res.data;

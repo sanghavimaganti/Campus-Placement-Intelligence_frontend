@@ -29,7 +29,9 @@ import {
   GraduationCap, 
   ArrowRight,
   ShieldCheck,
-  RotateCcw
+  RotateCcw,
+  UserPlus,
+  LogIn
 } from 'lucide-react';
 
 export default function App() {
@@ -58,6 +60,7 @@ export default function App() {
 
   // Modals state
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState('login');
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [applicantsCompanyId, setApplicantsCompanyId] = useState(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -106,33 +109,10 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('campus_placement_user');
+    setCurrentUser(null);
+    setLoginModalMode('login');
     setIsLoginOpen(true);
-  };
-
-  const handleSwitchToStudent = () => {
-    const studentUser = {
-      id: 1,
-      email: 'aarav.sharma.cse@campus.edu',
-      name: 'Aarav Sharma',
-      role: 'student',
-      student_id: 1,
-      roll_number: '21CS001',
-      department: 'CSE',
-      token: 'demo-student-token-21CS001'
-    };
-    handleLoginSuccess(studentUser);
-  };
-
-  const handleSwitchToAdmin = () => {
-    const adminUser = {
-      id: 1,
-      email: 'admin@campus.edu',
-      name: 'Prof. Rajesh Varma',
-      role: 'admin',
-      department: 'Placement Cell',
-      token: 'demo-tpo-auth-token-2026'
-    };
-    handleLoginSuccess(adminUser);
   };
 
   const handleScreenCompany = (companyId) => {
@@ -150,46 +130,48 @@ export default function App() {
         <div className="absolute inset-0 bg-grid-pattern opacity-40"></div>
       </div>
 
-      {/* Quick Role Switcher Banner */}
+      {/* Account & Role Banner */}
       <div className="relative z-50 bg-slate-900/90 border-b border-slate-800 text-[11px] py-1.5 px-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
             <span className="text-slate-400">Current Role Mode:</span>
-            <span className={`font-bold px-2 py-0.5 rounded-full ${
-              currentUser?.role === 'admin' 
-                ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' 
-                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-            }`}>
-              {currentUser?.role === 'admin' ? '👑 Training & Placement Officer (Admin)' : `🎓 Student Candidate: ${currentUser?.name} (${currentUser?.roll_number})`}
-            </span>
+            {currentUser ? (
+              <span className={`font-bold px-2 py-0.5 rounded-full ${
+                currentUser.role === 'admin' 
+                  ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' 
+                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+              }`}>
+                {currentUser.role === 'admin' 
+                  ? '👑 Training & Placement Officer (Admin)' 
+                  : `🎓 Student Candidate: ${currentUser.name} (${currentUser.roll_number || 'Student'})`}
+              </span>
+            ) : (
+              <span className="font-semibold text-slate-400">Not Signed In</span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-slate-500 hidden sm:inline">Quick Test:</span>
-            {currentUser?.role === 'admin' ? (
-              <button
-                onClick={handleSwitchToStudent}
-                className="px-2.5 py-1 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/50 text-emerald-300 border border-emerald-500/30 font-semibold transition-all flex items-center gap-1"
-              >
-                <GraduationCap className="w-3.5 h-3.5" />
-                <span>Switch to Student View</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleSwitchToAdmin}
-                className="px-2.5 py-1 rounded-lg bg-violet-950/50 hover:bg-violet-900/50 text-violet-300 border border-violet-500/30 font-semibold transition-all flex items-center gap-1"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Switch to TPO Admin View</span>
-              </button>
-            )}
+            <button
+              onClick={() => {
+                setLoginModalMode('register');
+                setIsLoginOpen(true);
+              }}
+              className="px-2.5 py-1 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/50 text-emerald-300 border border-emerald-500/30 font-semibold transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Create Student Account</span>
+            </button>
 
             <button
-              onClick={() => setIsLoginOpen(true)}
-              className="text-slate-400 hover:text-white px-2 py-1 rounded-lg hover:bg-slate-800 font-medium transition-all"
+              onClick={() => {
+                setLoginModalMode('login');
+                setIsLoginOpen(true);
+              }}
+              className="text-slate-300 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700 font-medium transition-all flex items-center gap-1.5"
             >
-              Sign In / Switch
+              <LogIn className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Sign In / Switch</span>
             </button>
           </div>
         </div>
@@ -348,6 +330,7 @@ export default function App() {
       {/* MODALS */}
       <LoginModal
         isOpen={isLoginOpen}
+        initialMode={loginModalMode}
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
