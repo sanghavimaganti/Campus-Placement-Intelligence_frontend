@@ -13,7 +13,8 @@ import {
   Layers,
   Award,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Edit3
 } from 'lucide-react';
 import { 
   getStudentDetail, 
@@ -21,13 +22,15 @@ import {
   applyToDrive, 
   runWhatIfSimulation 
 } from '../api/client';
+import EditStudentModal from './EditStudentModal';
 
-export default function StudentPortal({ currentUser, companies, onNavigateToSimulator }) {
+export default function StudentPortal({ currentUser, companies, onNavigateToSimulator, onStudentUpdated }) {
   const [studentData, setStudentData] = useState(null);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [applyingId, setApplyingId] = useState(null);
   const [applyFeedback, setApplyFeedback] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // What-if simulator state
   const [simCgpa, setSimCgpa] = useState(8.5);
@@ -81,6 +84,24 @@ export default function StudentPortal({ currentUser, companies, onNavigateToSimu
     } finally {
       setApplyingId(null);
     }
+  };
+
+  const handleUpdateSuccess = (updatedStudent) => {
+    setStudentData((prev) => ({
+      ...prev,
+      ...updatedStudent,
+      readiness_score: updatedStudent.readiness_score ?? prev?.readiness_score
+    }));
+    setSimCgpa(updatedStudent.cgpa);
+    setSimBacklogs(updatedStudent.active_backlogs);
+    setApplyFeedback({
+      type: 'success',
+      message: 'Your details have been updated successfully! Drive eligibilities and readiness metrics have been refreshed.',
+    });
+    if (onStudentUpdated) {
+      onStudentUpdated(updatedStudent);
+    }
+    loadStudentInfo();
   };
 
   const handleSimulate = async () => {
@@ -156,25 +177,44 @@ export default function StudentPortal({ currentUser, companies, onNavigateToSimu
                     🎉 Placed at {studentData?.placed_company} ({studentData?.package_lpa} LPA)
                   </span>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Update My Details</span>
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Placement Readiness Badge */}
-          <div className="flex flex-col items-center md:items-end justify-center bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Placement Readiness</span>
-            <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">
-                {studentData?.readiness_score}
-              </span>
-              <span className="text-xs text-slate-500">/ 100</span>
+          {/* Placement Readiness Badge & Update Button */}
+          <div className="flex flex-col items-center md:items-end justify-center gap-2.5">
+            <div className="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 text-center md:text-right w-full sm:w-auto">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Placement Readiness</span>
+              <div className="flex items-baseline justify-center md:justify-end gap-1 mt-1">
+                <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">
+                  {studentData?.readiness_score}
+                </span>
+                <span className="text-xs text-slate-500">/ 100</span>
+              </div>
+              <div className="w-28 mx-auto md:ml-auto md:mr-0 bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-indigo-500 to-emerald-400 h-1.5 rounded-full"
+                  style={{ width: `${studentData?.readiness_score || 0}%` }}
+                ></div>
+              </div>
             </div>
-            <div className="w-28 bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-indigo-500 to-emerald-400 h-1.5 rounded-full"
-                style={{ width: `${studentData?.readiness_score || 0}%` }}
-              ></div>
-            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Update Profile & Skills</span>
+            </button>
           </div>
         </div>
       </div>
@@ -500,6 +540,16 @@ export default function StudentPortal({ currentUser, companies, onNavigateToSimu
           </div>
         </div>
       </div>
+
+      {/* Edit Student Profile Details Modal */}
+      {isEditModalOpen && (
+        <EditStudentModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          studentData={studentData}
+          onUpdateSuccess={handleUpdateSuccess}
+        />
+      )}
     </div>
   );
 }

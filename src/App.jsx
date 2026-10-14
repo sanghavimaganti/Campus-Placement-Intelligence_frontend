@@ -31,35 +31,23 @@ import {
   ShieldCheck,
   RotateCcw,
   UserPlus,
-  LogIn
+  LogIn,
+  Edit3
 } from 'lucide-react';
 
 export default function App() {
-  // Default session: Admin (TPO) with quick switcher to Student
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('campus_placement_user');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
-    }
-    return {
-      id: 1,
-      email: 'admin@campus.edu',
-      name: 'Prof. Rajesh Varma',
-      role: 'admin',
-      department: 'Placement Cell',
-      token: 'demo-tpo-auth-token-2026'
-    };
-  });
+  // Always start with login page first
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const [activeTab, setActiveTab] = useState(currentUser?.role === 'student' ? 'student-portal' : 'analytics');
+  const [activeTab, setActiveTab] = useState('analytics');
   const [analytics, setAnalytics] = useState(null);
   const [students, setStudents] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [loading, setLoading] = useState(true);
 
-  // Modals state
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  // Modals state - isLoginOpen starts true so login page is displayed on opening
+  const [isLoginOpen, setIsLoginOpen] = useState(true);
   const [loginModalMode, setLoginModalMode] = useState('login');
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [applicantsCompanyId, setApplicantsCompanyId] = useState(null);
@@ -100,6 +88,7 @@ export default function App() {
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
+    setIsLoginOpen(false);
     localStorage.setItem('campus_placement_user', JSON.stringify(user));
     if (user.role === 'student') {
       setActiveTab('student-portal');
@@ -203,6 +192,15 @@ export default function App() {
                 currentUser={currentUser}
                 companies={companies}
                 onNavigateToSimulator={() => setActiveTab('simulator')}
+                onStudentUpdated={(updatedStudent) => {
+                  setCurrentUser((prev) => ({
+                    ...prev,
+                    name: updatedStudent.name,
+                    department: updatedStudent.department,
+                    roll_number: updatedStudent.roll_number
+                  }));
+                  loadData();
+                }}
               />
             )}
 
@@ -329,7 +327,8 @@ export default function App() {
 
       {/* MODALS */}
       <LoginModal
-        isOpen={isLoginOpen}
+        isOpen={isLoginOpen || !currentUser}
+        canClose={!!currentUser}
         initialMode={loginModalMode}
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={handleLoginSuccess}

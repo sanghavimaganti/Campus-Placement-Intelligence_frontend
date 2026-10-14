@@ -12,19 +12,25 @@ import {
   CheckCircle2,
   BookOpen,
   Award,
-  Sparkles
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { loginUser, registerStudent } from '../api/client';
 
-export default function LoginModal({ isOpen, onClose, onLoginSuccess, initialMode = 'login' }) {
+export default function LoginModal({ isOpen, onClose, onLoginSuccess, initialMode = 'login', canClose = true }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'register'
   const [role, setRole] = useState('student'); // 'student' or 'admin' (only for login)
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
   
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
       setError(null);
       setSuccessMessage(null);
+      setShowPassword(false);
+      setShowRegPassword(false);
     }
   }, [isOpen, initialMode]);
   
@@ -135,12 +141,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, initialMod
               <p className="text-xs text-slate-400">Campus Placement Intelligence System</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {canClose && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Mode Selector Tabs (Sign In vs Create Account) */}
@@ -247,15 +255,23 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, initialMod
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-300 block">Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your account password"
-                    className="w-full bg-slate-950/70 text-slate-200 text-xs pl-10 pr-3.5 py-3 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                    className="w-full bg-slate-950/70 text-slate-200 text-xs pl-10 pr-10 py-3 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -339,14 +355,24 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, initialMod
                 {/* Password */}
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-300 block">Password *</label>
-                  <input
-                    type="password"
-                    required
-                    value={regForm.password}
-                    onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                    placeholder="Create a password"
-                    className="w-full bg-slate-950/70 text-slate-200 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showRegPassword ? "text" : "password"}
+                      required
+                      value={regForm.password}
+                      onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
+                      placeholder="Create a password"
+                      className="w-full bg-slate-950/70 text-slate-200 text-xs pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer focus:outline-none"
+                      aria-label={showRegPassword ? "Hide password" : "Show password"}
+                    >
+                      {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
